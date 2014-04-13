@@ -1,0 +1,154 @@
+#include<stdio.h>
+#include<math.h>
+#include<algorithm>
+const int N=300003, MAX=200000000;
+using namespace std;
+FILE *f,*g;
+
+int d[N]; int n,k;
+
+void read(void){
+
+    f=fopen("watcan.in","r");
+    g=fopen("watcan.out","w");
+
+    fscanf(f,"%d%d",&n,&k);
+
+    int i;
+    for(i=1;i<=n;i++) fscanf(f,"%d",&d[i]);
+}
+
+struct forai{
+
+    int nr, val, inf;
+}ai[3*N];
+
+
+void initialize(int poz, int st, int dr){
+
+    if (st == dr){
+        if (d[st] >= k){
+            ai[poz].nr=1;
+            ai[poz].inf=MAX;
+            ai[poz].val=0;
+        }
+        else{
+            ai[poz].nr=0;
+            ai[poz].inf=k-d[st];
+            ai[poz].val=0;
+        }
+    }
+    else{
+        
+        int poz1=poz*2, poz2=poz1+1, mid=(st+dr)/2;
+
+        initialize(poz1,st,mid);
+        initialize(poz2,mid+1,dr);
+        
+        ai[poz].nr=ai[poz1].nr+ai[poz2].nr;
+        ai[poz].val=0;
+        ai[poz].inf=min(ai[poz1].inf,ai[poz2].inf);
+    }
+}
+
+void repair(int poz, int st, int dr){
+
+    int poz1=poz*2, poz2=poz1+1;
+
+    ai[poz1].val+=ai[poz].val;
+    ai[poz2].val+=ai[poz].val;
+    ai[poz].inf-=ai[poz].val;
+    ai[poz].val=0;
+}
+
+void solvemin(int poz, int st , int dr){
+
+    if (st == dr){
+        ai[poz].nr++;
+        ai[poz].val=0;
+        ai[poz].inf=MAX;
+    }
+
+    else{
+        repair(poz,st,dr);
+    
+        int poz1=poz*2, poz2=poz1+1, mid=(st+dr)/2;
+
+        if (ai[poz1].inf <= ai[poz1].val) solvemin(poz1,st,mid);
+        else solvemin(poz2,mid+1,dr);
+
+        ai[poz].nr=ai[poz1].nr+ai[poz2].nr;
+        ai[poz].inf=min (ai[poz1].inf-ai[poz1].val,ai[poz2].inf-ai[poz2].val);
+
+}
+
+}
+
+void update(int poz, int st, int dr, int fi, int la, int v){
+
+    if (st == fi && dr == la){
+        ai[poz].val+=v;
+        while (ai[poz].inf <= ai[poz].val) solvemin(poz,st,dr);
+    }
+
+    else{
+
+        repair(poz,st,dr);
+        
+        int poz1=poz*2, poz2=poz1+1, mid=(st+dr)/2;
+
+        if (la <= mid) update(poz1,st,mid,fi,la,v);
+        else if (fi >= mid+1) update(poz2,mid+1,dr,fi,la,v);
+            else {
+                update(poz1,st,mid,fi,mid,v);
+                update(poz2,mid+1,dr,mid+1,la,v);
+            }
+
+        ai[poz].inf=min(ai[poz1].inf-ai[poz1].val, ai[poz2].inf-ai[poz2].val);
+        ai[poz].nr=ai[poz1].nr+ai[poz2].nr;
+
+    }
+}
+
+int findmat(int poz, int st, int dr,int fi, int la){
+
+    if (st == fi && dr == la) return ai[poz].nr;
+    else{
+
+        int poz1=poz*2, poz2=poz1+1, mid=(st+dr)/2;
+
+        if (la <= mid) return findmat(poz1,st,mid,fi,la);
+        else if (fi >= mid+1) return findmat(poz2,mid+1,dr,fi,la);
+            else return findmat(poz1,st,mid,fi,mid)+findmat(poz2,mid+1,dr,mid+1,la);
+
+    }
+}
+
+
+int main(void){
+
+    read();
+    initialize(1,1,n);
+
+    int i; int x,a,b,c; int q;
+    fscanf(f,"%d",&q);
+
+    for(i=1;i<=q;i++){
+
+        fscanf(f,"%d%d%d",&x,&a,&b);
+        if (x) fprintf(g,"%d\n",findmat(1,1,n,a,b));
+        else {fscanf(f,"%d",&c); update(1,1,n,a,b,c);}
+    }
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
